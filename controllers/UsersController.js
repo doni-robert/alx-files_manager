@@ -5,7 +5,6 @@ import UsersCollection from '../utils/users';
 const userQueue = Queue('send welcome email');
 
 class UsersController {
-  
   static async postNew(req, res) {
     const { email, password } = req.body;
     if (email === undefined) {
