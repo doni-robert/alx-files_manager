@@ -7,7 +7,7 @@ import { Queue } from 'bull';
 import dbClient from '../utils/db';
 import redisClient from '../utils/redis';
 
-// Create a queue to process file generation jobs
+// Create queue to process file generation jobs
 const fileQueue = new Queue('file generation');
 
 class FilesController {
