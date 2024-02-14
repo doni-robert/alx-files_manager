@@ -8,15 +8,14 @@ const DB_DATABASE = process.env.DB_DATABASE || 'files_manager';
 class DBClient {
   constructor() {
     this.client = new MongoClient(url, { useUnifiedTopology: true, useNewUrlParser: true });
-    this.db = null; // Reference to the MongoDB database
-
-    this.connect(); // Connect to the MongoDB server
+    this.db = null;
+    this.connect();
   }
 
   async connect() {
     try {
-      await this.client.connect(); // Connect to the MongoDB server
-      this.db = this.client.db(DB_DATABASE); // Assign the database reference
+      await this.client.connect();
+      this.db = this.client.db(DB_DATABASE);
       console.log('Connected to MongoDB');
     } catch (err) {
       console.error('Error connecting to MongoDB:', err);
@@ -35,7 +34,6 @@ class DBClient {
     } catch (err) {
       console.error(err);
       throw err;
-      // handle error as necessary
     }
   }
 
