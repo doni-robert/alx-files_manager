@@ -43,7 +43,7 @@ class RedisClient {
      * @returns {Promise<void>} A Promise that resolves when the key-value pair is successfully set.
      */
   async set(key, value, duration) {
-    await this.client.set(key, value, 'EX', duration);
+    await this.client.setex(key, duration, value);
   }
 
   /**

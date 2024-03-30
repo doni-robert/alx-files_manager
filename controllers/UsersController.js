@@ -1,5 +1,8 @@
 const sha1 = require('sha1');
 const dbClient = require('../utils/db');
+const redis = require('../utils/redis');
+const { ObjectId } = require('mongodb');
+
 
 class UsersController {
   /**
@@ -22,7 +25,7 @@ class UsersController {
     }
 
     // Checking if user with the same email already exists
-    if (await dbClient.db.collection('users').findOne({ email })) {
+    if (await dbClient.db.collection('users').findOne({ email: email })) {
       return response.status(400).send({ Error: 'Already exist' });
     }
 
@@ -45,6 +48,27 @@ class UsersController {
 
     // Sending response with status 201 (Created) and the new user object
     return response.status(201).send(newUser);
+  }
+
+  static async getMe(req, res) {
+    try {
+        const token = req.header('X-Token');
+            
+        const userId = await redis.get(`auth_${token}`)
+        if (!userId || !token) {throw new Error()};
+        
+        const user = await dbClient.db.collection('users').findOne({ _id: ObjectId(userId) })
+        console.log(user)
+        return res.status(201).send({
+            id: user._id,
+            email: user.email
+        })
+
+
+    } catch {
+        return res.status(401).send({error: "Unauthorized"})
+    }
+   
   }
 }
 
