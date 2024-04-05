@@ -1,49 +1,45 @@
-const redis = require('../utils/redis');
-const dbClient = require('../utils/db');
 const auth = require('basic-auth');
-const { v4: uuid } = require('uuid')
+const { v4: uuid } = require('uuid');
 const sha1 = require('sha1');
-
+const dbClient = require('../utils/db');
+const redis = require('../utils/redis');
 
 class AuthController {
-    static async getConnect(req, res){
-        let foundUser;
-        try {
-            const user = auth(req)
-            if (!user) {throw new Error()}
-            const password = sha1(user.pass);
-            const email = user.name;
+  static async getConnect(req, res) {
+    let foundUser;
+    try {
+      const user = auth(req);
+      const password = sha1(user.pass);
+      const email = user.name;
+      if (!user || !email || !password) { throw new Error(); }
 
-            foundUser = await dbClient.db.collection('users').findOne({
-                email,
-                password,
-            })
-        } catch(error) {
-            return res.status(401).send({error: "Unauthorized"})
-        }
-
-        const token = uuid();
-        const key = `auth_${token}`
-        await redis.set(key, foundUser._id.toString(), 86400);
-        return res.status(200).send({ token })
-
+      foundUser = await dbClient.db.collection('users').findOne({
+        email,
+        password,
+      });
+    } catch (error) {
+      return res.status(401).send({ error: 'Unauthorized' });
     }
 
-    static async getDisconnect(req, res) {
-        try {
-            const token = req.header('X-Token');
-            
-            const user = await redis.get(`auth_${token}`)
-            if (!user || !token) {throw new Error()};
-            await redis.del(`auth_${token}`)
+    const token = uuid();
+    const key = `auth_${token}`;
+    await redis.set(key, foundUser._id.toString(), 86400);
+    return res.status(200).send({ token });
+  }
 
-            return res.status(204).send();
-        } catch {
-            return res.status(401).send({error: "Unauthorized"})
+  static async getDisconnect(req, res) {
+    try {
+      const token = req.header('X-Token');
 
-        }
+      const user = await redis.get(`auth_${token}`);
+      if (!user || !token) { throw new Error(); }
+      await redis.del(`auth_${token}`);
+
+      return res.status(204).send();
+    } catch (error) {
+      return res.status(401).send({ error: 'Unauthorized' });
     }
-
+  }
 }
 
-module.exports = AuthController
+module.exports = AuthController;
