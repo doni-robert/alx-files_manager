@@ -54,6 +54,7 @@ class UsersController {
       const token = req.header('X-Token');
 
       const userId = await redis.get(`auth_${token}`);
+
       if (!userId || !token) { throw new Error(); }
 
       const user = await dbClient.db.collection('users').findOne({ _id: ObjectId(userId) });
@@ -69,7 +70,11 @@ class UsersController {
         });
       }
     } catch (error) {
-      res.status(401).send({ error: 'Unauthorized' });
+      if (next) {
+        next(error); // Call the next function with the error parameter to handle errors
+      } else {
+        res.status(401).send({ error: 'Unauthorized' });
+      }
     }
   }
 }
