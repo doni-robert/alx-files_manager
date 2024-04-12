@@ -1,5 +1,6 @@
 const { v4: uuid } = require('uuid');
 const fs = require('fs');
+const { ObjectId } = require('mongodb');
 const dbClient = require('../utils/db');
 
 /**
@@ -90,6 +91,59 @@ class FilesController {
       id: file._id,
       localPath: undefined,
     });
+  }
+
+  static async getShow(req, res) {
+    const fileId = req.params.id || '';
+    const user = req.user._id;
+    const file = await dbClient.collection('files').findOne({ _id: ObjectId(fileId), userId: user });
+
+    if (!file) return res.status(404).send({ error: 'Not found' });
+
+    return res.send({
+      id: file._id,
+      userId: file.userId,
+      name: file.name,
+      type: file.type,
+      isPublic: file.isPublic,
+      parentId: file.parentId,
+    });
+  }
+
+  static async getIndex(req, res) {
+    const parentId = (req.query.parentId) || 0;
+    const page = (req.query.page) || 0;
+    const pipeline = [];
+    if (parentId !== 0) {
+      const aggregationMatch = { $and: [{ parentId }] };
+      pipeline.push({ $match: aggregationMatch });
+    }
+
+    const skipCount = page * 20;
+    pipeline.push({ $skip: skipCount }, { $limit: 20 });
+
+    let fileDocs = [];
+
+    try {
+      fileDocs = await dbClient.db.collection('files').aggregate(pipeline).toArray();
+    } catch (error) {
+      return res.status(500).send(error);
+    }
+
+    const filesArray = [];
+    fileDocs.forEach((item) => {
+      const fileItem = {
+        id: item._id,
+        userId: item.userId,
+        name: item.name,
+        type: item.type,
+        isPublic: item.isPublic,
+        parentId: item.parentId,
+      };
+      filesArray.push(fileItem);
+    });
+
+    return res.send(filesArray);
   }
 }
 
